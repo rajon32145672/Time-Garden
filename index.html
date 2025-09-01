@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindGarden</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body class="bg-gradient-to-r from-green-100 to-green-200 text-gray-800 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="p-4 bg-green-600 text-white text-center text-2xl font-bold">🌱 MindGarden</header>
+
+  <!-- Tabs -->
+  <nav class="flex justify-around bg-green-500 text-white p-2">
+    <button onclick="showTab('garden')">Garden</button>
+    <button onclick="showTab('habits')">Habits</button>
+    <button onclick="showTab('progress')">Progress</button>
+    <button onclick="showTab('timer')">Timer</button>
+    <button onclick="showTab('community')">Community</button>
+    <button onclick="showTab('settings')">Settings</button>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-4 overflow-y-auto">
+
+    <!-- Garden Tab -->
+    <section id="garden" class="tab">
+      <h2 class="text-xl font-bold mb-2">Your Garden</h2>
+      <div id="gardenContainer" class="border rounded-lg p-4 min-h-[200px] flex flex-wrap gap-2 bg-white shadow"></div>
+      <div id="weather" class="mt-4 text-center text-2xl"></div>
+    </section>
+
+    <!-- Habits Tab -->
+    <section id="habits" class="tab hidden">
+      <h2 class="text-xl font-bold mb-2">Habit Tracker</h2>
+      <input id="habitInput" class="border p-2 rounded w-full" placeholder="Enter new habit" />
+      <button onclick="addHabit()" class="bg-green-500 text-white px-4 py-2 rounded mt-2">Add Habit</button>
+      <ul id="habitList" class="mt-4 space-y-2"></ul>
+    </section>
+
+    <!-- Progress Tab -->
+    <section id="progress" class="tab hidden">
+      <h2 class="text-xl font-bold mb-2">Progress</h2>
+      <canvas id="progressChart" class="bg-white rounded shadow p-2"></canvas>
+      <button onclick="downloadYearlyForest()" class="bg-green-600 text-white px-4 py-2 rounded mt-4">Download Yearly Forest</button>
+    </section>
+
+    <!-- Timer Tab -->
+    <section id="timer" class="tab hidden">
+      <h2 class="text-xl font-bold mb-2">Pomodoro Timer</h2>
+      <div id="timerDisplay" class="text-4xl font-bold mb-4">25:00</div>
+      <button onclick="startTimer()" class="bg-green-500 text-white px-4 py-2 rounded">Start</button>
+      <button onclick="resetTimer()" class="bg-red-500 text-white px-4 py-2 rounded">Reset</button>
+    </section>
+
+    <!-- Community Tab -->
+    <section id="community" class="tab hidden">
+      <h2 class="text-xl font-bold mb-2">Community Inspiration</h2>
+      <blockquote id="quoteBox" class="italic text-lg">Loading quote...</blockquote>
+    </section>
+
+    <!-- Settings Tab -->
+    <section id="settings" class="tab hidden">
+      <h2 class="text-xl font-bold mb-2">Settings</h2>
+      <button onclick="toggleDarkMode()" class="bg-gray-700 text-white px-4 py-2 rounded">Toggle Dark Mode</button>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="p-4 bg-green-600 text-white text-center text-sm">© 2025 MindGarden</footer>
+
+  <script>
+    // Tab switching
+    function showTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden'));
+      document.getElementById(tab).classList.remove('hidden');
+    }
+
+    // Habits
+    function addHabit() {
+      const input = document.getElementById('habitInput');
+      const habit = input.value.trim();
+      if (!habit) return;
+      const li = document.createElement('li');
+      li.className = "flex justify-between items-center bg-white shadow p-2 rounded";
+      li.innerHTML = `<span>${habit}</span> <button onclick="completeHabit(this)" class="bg-green-500 text-white px-2 py-1 rounded">Done</button>`;
+      document.getElementById('habitList').appendChild(li);
+      input.value = '';
+    }
+    function completeHabit(btn) {
+      btn.parentElement.remove();
+      growTree();
+    }
+
+    // Garden
+    function growTree() {
+      const div = document.createElement('div');
+      div.textContent = "🌳";
+      div.className = "text-3xl";
+      document.getElementById('gardenContainer').appendChild(div);
+    }
+
+    // Weather animation
+    function updateWeather() {
+      const weather = ["☀️", "🌧️", "☁️"];
+      document.getElementById('weather').textContent = weather[Math.floor(Math.random() * weather.length)];
+    }
+    setInterval(updateWeather, 5000);
+
+    // Progress Chart
+    const ctx = document.getElementById('progressChart');
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+        datasets: [{
+          label: 'Habits Done',
+          data: [3,2,5,4,6,1,2],
+          backgroundColor: 'rgba(34,197,94,0.6)'
+        }]
+      }
+    });
+
+    // Pomodoro Timer
+    let timer;
+    let timeLeft = 25 * 60;
+    function startTimer() {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          alert("Pomodoro Complete!");
+          return;
+        }
+        timeLeft--;
+        updateTimer();
+      }, 1000);
+    }
+    function resetTimer() {
+      clearInterval(timer);
+      timeLeft = 25 * 60;
+      updateTimer();
+    }
+    function updateTimer() {
+      const m = Math.floor(timeLeft / 60);
+      const s = timeLeft % 60;
+      document.getElementById('timerDisplay').textContent =
+        `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
+
+    // Quotes
+    const quotes = [
+      "🌱 Small steps grow big trees.",
+      "💚 Consistency is the key to progress.",
+      "🌿 Every habit is a seed in your garden."
+    ];
+    let qi = 0;
+    function showQuote() {
+      document.getElementById('quoteBox').textContent = quotes[qi];
+      qi = (qi+1)%quotes.length;
+    }
+    setInterval(showQuote, 5000);
+    showQuote();
+
+    // Dark mode
+    function toggleDarkMode() {
+      document.body.classList.toggle("bg-gray-900");
+      document.body.classList.toggle("text-white");
+    }
+
+    // 🎉 Download Yearly Forest 🎉
+    function downloadYearlyForest() {
+      const garden = document.getElementById("gardenContainer");
+      if (!garden) {
+        alert("No garden to download yet!");
+        return;
+      }
+      html2canvas(garden).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "my_yearly_forest.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+  </script>
+
+</body>
+</html>
